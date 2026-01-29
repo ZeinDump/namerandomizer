@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pair Picker</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: Arial, sans-serif;
+        background: #000;
+        color: #fff;
+        padding: 20px;
+        max-width: 600px;
+        margin: auto;
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    label {
+        font-size: 14px;
+        color: #ccc;
+    }
+
+    textarea {
+        width: 100%;
+        margin-top: 6px;
+        padding: 10px;
+        font-size: 15px;
+        border-radius: 6px;
+        border: 1px solid #333;
+        background: #111;
+        color: #fff;
+        resize: vertical;
+    }
+
+    button {
+        width: 100%;
+        margin-top: 12px;
+        padding: 12px;
+        font-size: 16px;
+        cursor: pointer;
+        background: #0f62fe;
+        color: white;
+        border: none;
+        border-radius: 6px;
+    }
+
+    button:hover {
+        background: #0353e9;
+    }
+
+    #spin {
+        display: block;
+        margin: 20px auto;
+        width: 200px;
+    }
+
+    .winner {
+        margin-top: 30px;
+        font-size: 28px;
+        text-align: center;
+        color: #00ff99;
+        min-height: 40px;
+    }
+
+    .spinning {
+        opacity: 0.6;
+    }
+
+    /* ---------- PRESET PANEL ---------- */
+    #presetPanel {
+        display: none;
+        margin-top: 20px;
+        padding: 15px;
+        background: #0b0b0b;
+        border: 1px solid #333;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.6);
+    }
+
+    #presetPanel label {
+        color: #ffcc00;
+        font-weight: bold;
+    }
+
+    .preset-hint {
+        font-size: 12px;
+        color: #888;
+        margin-top: 4px;
+    }
+
+    /* ---------- SECRET ICON ---------- */
+    #secretIcon {
+        display: block;
+        margin: 25px auto 0;
+        width: 36px;
+        cursor: pointer;
+        opacity: 0.35;
+        transition: opacity 0.2s, transform 0.2s;
+    }
+
+    #secretIcon:hover {
+        opacity: 0.8;
+        transform: scale(1.1);
+    }
+</style>
+</head>
+
+<body>
+
+<h2>Pair Picker 🎡</h2>
+
+<label>Names (one per line)</label>
+<textarea id="names" rows="6"></textarea>
+
+<img id="spin" src="spin the wheel.gif">
+
+<!-- PRESET PANEL -->
+<div id="presetPanel">
+    <label>Preset Pairs</label>
+    <div class="preset-hint">
+        Format: Name1 & Name2 (one pair per line)
+    </div>
+    <textarea id="preset" rows="4"></textarea>
+</div>
+
+<button onclick="loadData()">LOAD DATA</button>
+<button onclick="spin()">SPIN</button>
+
+<div class="winner spinning" id="display">
+    Pair: —
+</div>
+
+<img id="secretIcon" src="black.png" onclick="togglePreset()">
+
+<script>
+let presetPairs = [];
+let randomPairs = [];
+let loaded = false;
+let spinning = false;
+
+/* ✅ SHUFFLE FUNCTION (FIX) */
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function togglePreset() {
+    const panel = document.getElementById("presetPanel");
+    panel.style.display = panel.style.display === "none" ? "block" : "none";
+}
+
+function loadData() {
+    presetPairs = [];
+    randomPairs = [];
+    loaded = true;
+
+    let names = document.getElementById("names").value
+        .split("\n")
+        .map(n => n.trim())
+        .filter(Boolean);
+
+    presetPairs = document.getElementById("preset").value
+        .split("\n")
+        .map(p => p.split("&").map(n => n.trim()))
+        .filter(p => p.length === 2);
+
+    /* Remove preset names */
+    const used = new Set(presetPairs.flat());
+    names = names.filter(n => !used.has(n));
+
+    /* ✅ SHUFFLE remaining names BEFORE pairing */
+    shuffle(names);
+
+    /* Build truly random pairs */
+    for (let i = 0; i < names.length; i += 2) {
+        if (names[i + 1]) {
+            randomPairs.push([names[i], names[i + 1]]);
+        }
+    }
+
+    document.getElementById("display").textContent = "Ready to spin";
+}
+
+function spin() {
+    if (!loaded) {
+        alert("Click LOAD DATA first.");
+        return;
+    }
+    if (spinning) return;
+    if (presetPairs.length === 0 && randomPairs.length === 0) {
+        alert("No pairs left.");
+        return;
+    }
+
+    spinning = true;
+    const display = document.getElementById("display");
+    display.classList.add("spinning");
+    display.textContent = "Spinning...";
+
+    let finalPair;
+    if (presetPairs.length > 0) {
+        finalPair = presetPairs.shift();
+    } else {
+        const i = Math.floor(Math.random() * randomPairs.length);
+        finalPair = randomPairs.splice(i, 1)[0];
+    }
+
+    setTimeout(() => {
+        display.classList.remove("spinning");
+        display.textContent = finalPair[0] + " & " + finalPair[1];
+        spinning = false;
+    }, 2000);
+}
+</script>
+
+</body>
+</html>
